@@ -16,6 +16,7 @@ from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 
 from . import config
+from .observability import init_sentry, report_exception
 from .store import envelope, get_record, load_history, load_records, paginate, utc_now_iso
 
 _LOCAL_ORIGIN_RE = re.compile(r"^https?://(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$", re.I)
@@ -150,6 +151,7 @@ class DataProductHandler(BaseHTTPRequestHandler):
             self._handle_get()
         except Exception as exc:  # fail closed without leaking lake paths or payloads
             sys.stderr.write(f"[{config.REPO_NAME}] data unavailable: {type(exc).__name__}\n")
+            report_exception(exc)
             _json_response(self, 503, _status_envelope("unavailable", "data lake unavailable"))
 
     def _handle_get(self) -> None:
@@ -325,6 +327,7 @@ class DataProductHandler(BaseHTTPRequestHandler):
 
 
 def create_server(host: str | None = None, port: int | None = None) -> ThreadingHTTPServer:
+    init_sentry()  # no-op without SENTRY_DSN
     return ThreadingHTTPServer(
         (host or config.API_HOST, port if port is not None else config.API_PORT),
         DataProductHandler,
