@@ -74,9 +74,13 @@ paths or exception text; 404/403/400 responses never need the runtime.
 
 Without a Solo Empire checkout (as in `.github/workflows/ci.yml`):
 
-    python -m pip install -e ".[dev,lake]"
-    ruff check .
-    python -m pytest -q -rs
+    uv sync --frozen --all-extras        # uv.lock: package + [dev,lake,sentry]
+    uv run ruff check . && uv run ruff format --check .
+    uv run mypy                           # scope: [tool.mypy] files in pyproject.toml
+    uv run python -m pytest -q -rs --cov  # CI gate: total coverage >= 90%
+
+Error reporting is opt-in: with the `sentry` extra and `SENTRY_DSN` set, a lake failure
+behind a 503 is sent to Sentry (type and stack only). See [PRODUCT.md](PRODUCT.md).
 
 `tests/test_http_api.py` drives the real HTTP handler on a loopback port with
 in-memory store stubs (pagination, single record, CORS, refresh auth, 503).
