@@ -95,6 +95,33 @@ class ApiSentryTests(unittest.TestCase):
         self.assertEqual(sentry.tags.get("service"), "book-discovery-data-api")
         self.assertIs((sentry.init_kwargs or {}).get("send_default_pii"), False)
 
+    def test_init_scrubs_locals_request_bodies_and_messages(self) -> None:
+        sentry, _base = self.start("https://key@example.invalid/1")
+        kwargs: dict[str, Any] = sentry.init_kwargs or {}
+        self.assertIs(kwargs.get("include_local_variables"), False)
+        self.assertEqual(kwargs.get("max_request_body_size"), "never")
+        before_send = kwargs.get("before_send")
+        self.assertTrue(callable(before_send))
+        event = {
+            "request": {"headers": {"Authorization": "Bearer secret-token"}, "data": "body"},
+            "exception": {
+                "values": [
+                    {
+                        "type": "OSError",
+                        "value": "/private/lake/path token=secret-token",
+                        "stacktrace": {"frames": [{"function": "f", "vars": {"token": "secret-token"}}]},
+                    }
+                ]
+            },
+        }
+        scrubbed = before_send(event, {})
+        self.assertNotIn("secret-token", json.dumps(scrubbed))
+        self.assertNotIn("/private/lake", json.dumps(scrubbed))
+        self.assertNotIn("request", scrubbed)
+        value = scrubbed["exception"]["values"][0]
+        self.assertEqual(value["type"], "OSError")
+        self.assertNotIn("vars", value["stacktrace"]["frames"][0])
+
     def test_healthy_request_sends_nothing(self) -> None:
         sentry, base = self.start("https://key@example.invalid/1")
         status, _body = self.get(base + "/v1/records")
