@@ -51,8 +51,8 @@ PRODUCT.md and no error reporting. The API fails closed: every lake error become
 
 | AC | Red (sha · command · failure) | Green |
 |---|---|---|
-| AC-01..03 | `43447b9` · `python -m pytest -q tests/test_api_sentry.py` · `AssertionError: 0 != 1` | `GREEN_CI` |
-| AC-04 | `db9b497` · `python -m pytest -q tests/test_api_sentry.py` · `AssertionError: None is not False` | `GREEN_CI` |
+| AC-01..03 | `43447b9` · `python -m pytest -q tests/test_api_sentry.py` · `AssertionError: 0 != 1` | [run 39755175167](https://github.com/bookchaowalit/tech-discovery-data/actions/runs/39755175167) (success, 3.11 + 3.13) |
+| AC-04 | `db9b497` · `python -m pytest -q tests/test_api_sentry.py` · `AssertionError: None is not False` | [run 39755175167](https://github.com/bookchaowalit/tech-discovery-data/actions/runs/39755175167) (success, 3.11 + 3.13) |
 
 ## Schedule (planned replacement, D6)
 
