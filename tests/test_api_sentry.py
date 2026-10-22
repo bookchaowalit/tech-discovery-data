@@ -100,7 +100,7 @@ class ApiSentryTests(unittest.TestCase):
         kwargs: dict[str, Any] = sentry.init_kwargs or {}
         self.assertIs(kwargs.get("include_local_variables"), False)
         self.assertEqual(kwargs.get("max_request_body_size"), "never")
-        before_send = kwargs.get("before_send")
+        before_send: Any = kwargs.get("before_send")
         self.assertTrue(callable(before_send))
         event = {
             "request": {"headers": {"Authorization": "Bearer secret-token"}, "data": "body"},
