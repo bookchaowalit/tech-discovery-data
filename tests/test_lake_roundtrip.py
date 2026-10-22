@@ -45,7 +45,7 @@ class LakeRoundTripTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory(prefix="discovery-lake-")
         self.lake_uri = self._tmp.name
-        from data_lake.product_adapter import ingest_to_lake  # type: ignore
+        from data_lake.product_adapter import ingest_to_lake
 
         for dataset in (config.LAKE_DATASET_SIGNALS, config.LAKE_DATASET_HISTORY):
             # Batch ids derive from the landed bytes, so each dataset lands its own batch.
@@ -76,7 +76,7 @@ class LakeRoundTripTests(unittest.TestCase):
 
     def test_get_record_resolves_ids_and_misses_unknown(self) -> None:
         record = store.get_record("hacker_news|42", data_lake_uri=self.lake_uri)
-        self.assertIsNotNone(record)
+        assert record is not None
         self.assertEqual(record["title"], "Show HN: 100% offline tool")
         self.assertIsNone(store.get_record("hacker_news|missing", data_lake_uri=self.lake_uri))
 

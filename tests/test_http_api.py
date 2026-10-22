@@ -11,6 +11,8 @@ import json
 import sys
 import threading
 import unittest
+from http.server import ThreadingHTTPServer
+from typing import Any
 from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.parse import unquote
@@ -59,6 +61,10 @@ def fake_get_record(record_id, **_kwargs):
 
 
 class HttpApiTests(unittest.TestCase):
+    server: ThreadingHTTPServer
+    thread: threading.Thread
+    base: str
+
     @classmethod
     def setUpClass(cls):
         cls.server = api.create_server("127.0.0.1", 0)
@@ -73,7 +79,7 @@ class HttpApiTests(unittest.TestCase):
         cls.thread.join(timeout=3)
 
     def setUp(self):
-        patches = [
+        patches: list[Any] = [
             patch.object(api, "load_records", fake_records),
             patch.object(api, "load_history", fake_records),
             patch.object(api, "paginate", fake_paginate),

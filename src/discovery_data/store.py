@@ -32,7 +32,7 @@ def _use_sibling_runtime() -> None:
 def _load_product_store():
     try:
         _use_sibling_runtime()
-        from data_lake import product_store as product_store_module  # type: ignore
+        from data_lake import product_store as product_store_module
     except ImportError as exc:
         raise SharedRuntimeUnavailable(
             "shared data_lake runtime not found; install the [lake] extra "
@@ -74,7 +74,7 @@ def _lake_uri() -> str | None:
 
 def _contract():
     _ps()  # locate the shared runtime before importing its adapter
-    from data_lake.product_adapter import LakeProductContract  # type: ignore
+    from data_lake.product_adapter import LakeProductContract
 
     return LakeProductContract(
         source=config.LAKE_SOURCE,
