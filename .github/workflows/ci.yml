@@ -1,6 +1,4 @@
 # CI + security baseline (DevSecOps Phase 1). Public repository: GitHub-hosted runners.
-# Replaces the previous standalone CI workflow (Ruff + pytest on a 3.11/3.12 matrix), which this duplicates.
-# The reusable workflow takes one Python version per job, so the matrix becomes two jobs.
 name: CI
 
 on:
@@ -17,29 +15,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  data-py311:
-    uses: bookchaowalit/platform-ci-workflows/.github/workflows/ci-python.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Lowest supported (requires-python) and a current release.
+        python-version: ["3.11", "3.13"]
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/ci-python.yml@87dc5e1c7e0416886a6371d5a101bb2ccba38edd # v1.1.1
     with:
-      python-version: "3.11" # requires-python floor
-      # [lake] installs the pinned solo-empire-data-lake runtime, so the Bronze round-trip tests
-      # run instead of skipping; [dev] brings pytest and Ruff.
-      install-command: uv pip install -e ".[dev,lake]"
-      # Lake runtime must be importable, then the offline tests (lake tests write only to a temp dir).
-      test-command: >-
-        python -c "from discovery_data import store; assert store.shared_runtime_available()" &&
-        python -m pytest -q -rs
-
-  data-py312:
-    uses: bookchaowalit/platform-ci-workflows/.github/workflows/ci-python.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
-    with:
-      python-version: "3.12"
-      # [lake] installs the pinned solo-empire-data-lake runtime, so the Bronze round-trip tests
-      # run instead of skipping; [dev] brings pytest and Ruff.
-      install-command: uv pip install -e ".[dev,lake]"
-      # Lake runtime must be importable, then the offline tests (lake tests write only to a temp dir).
-      test-command: >-
-        python -c "from discovery_data import store; assert store.shared_runtime_available()" &&
-        python -m pytest -q -rs
+      python-version: ${{ matrix.python-version }}
+      # Installs from uv.lock (uv sync --frozen --all-extras): [lake] brings the pinned
+      # solo-empire-data-lake runtime so the Bronze round-trip tests run instead of skipping,
+      # [dev] brings pytest, ruff and mypy, [sentry] the opt-in SDK.
+      # Ratchet: measured 90.39% on 2026-10-22 (ADR-0004: threshold = measured, rounded down); raise it as tests grow.
+      coverage-threshold: "90"
+      # Lake runtime must be importable, then the offline tests under coverage (lake tests write only to a temp dir).
+      test-command: |
+        python -c "from discovery_data import store; assert store.shared_runtime_available()"
+        python -m pytest -q -rs --cov --cov-report=
 
   security:
-    uses: bookchaowalit/platform-ci-workflows/.github/workflows/security.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/security.yml@87dc5e1c7e0416886a6371d5a101bb2ccba38edd # v1.1.1
