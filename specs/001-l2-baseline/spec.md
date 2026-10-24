@@ -1,7 +1,7 @@
 ---
 id: SPEC-001
 title: L2 baseline for tech-discovery-data
-status: in review
+status: approved
 created: 2026-10-22
 owner: bookchaowalit
 ---
@@ -14,7 +14,7 @@ owner: bookchaowalit
 |---|---|
 | Main-only | yes (ADR-0004 v1.1: red run is local, red and green commits pushed together) |
 | Maker | Claude session b-data (2026-10-22) |
-| Checker / approver | pending (owner) |
+| Checker / approver | independent Claude reviewer / AI approval 2026-10-24 (see Approval) |
 
 ## Problem
 
@@ -72,3 +72,13 @@ No scheduler was changed (owner decision D6 on the schedule host is open).
 
 Live captures, R2/production lake writes, moving capture into this repo, the `source_columns`
 producer fix, and a deploy workflow (blocked by D6).
+
+## Approval (2026-10-24)
+
+| Field | Value |
+|---|---|
+| Checker | independent Claude reviewer subagent (`solo:solo-reviewer`, Sonnet, read-only, no maker context) |
+| Approver | AI approval under the owner's process (approvals by the owner or AI with evidence; maker and checker are different agents). Recorded by Claude session oa-remainder on the owner's instruction "ทำที่เหลือให้หน่อย" (2026-10-24) |
+| Verdict | **approved** |
+| Tests run by the checker | uv run --frozen --offline pytest -q --cov: 36 passed, 1 skipped, coverage 91% (gate 90); AC-05 contract tests 4 passed with SOLO_DATA_LAKE_ROOT set |
+| Evidence | tests/test_api_sentry.py (AC-01..04), test_contract_discovery_v1.py (AC-05). |
