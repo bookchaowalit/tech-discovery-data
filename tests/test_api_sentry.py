@@ -22,7 +22,7 @@ from urllib.request import urlopen
 
 from test_http_api import fake_envelope, fake_paginate, fake_records
 
-from discovery_data import api
+from discovery_data import api, observability
 
 
 class FakeSentry(types.ModuleType):
@@ -45,6 +45,17 @@ class FakeSentry(types.ModuleType):
         return None
 
 
+class FakeLoggingIntegration:
+    def __init__(self, **kwargs: Any) -> None:
+        self.kwargs = kwargs
+
+
+def fake_logging_module() -> types.ModuleType:
+    module = types.ModuleType("sentry_sdk.integrations.logging")
+    module.LoggingIntegration = FakeLoggingIntegration  # type: ignore[attr-defined]
+    return module
+
+
 def broken_lake(**_kwargs: Any) -> dict[str, Any]:
     raise OSError("/private/lake/path is unreadable")
 
@@ -54,7 +65,10 @@ class ApiSentryTests(unittest.TestCase):
         sentry = FakeSentry()
         env = {"SENTRY_DSN": dsn} if dsn else {}
         for item in (
-            patch.dict(sys.modules, {"sentry_sdk": sentry}),
+            patch.dict(
+                sys.modules,
+                {"sentry_sdk": sentry, "sentry_sdk.integrations.logging": fake_logging_module()},
+            ),
             patch.dict(os.environ, env, clear=True),
             patch.object(api, "load_records", fake_records),
             patch.object(api, "load_history", fake_records),
@@ -121,6 +135,37 @@ class ApiSentryTests(unittest.TestCase):
         value = scrubbed["exception"]["values"][0]
         self.assertEqual(value["type"], "OSError")
         self.assertNotIn("vars", value["stacktrace"]["frames"][0])
+
+    def test_init_disables_log_to_event_and_breadcrumbs(self) -> None:
+        sentry, _base = self.start("https://key@example.invalid/1")
+        integrations = (sentry.init_kwargs or {}).get("integrations")
+        self.assertIsInstance(integrations, list)
+        assert isinstance(integrations, list)
+        self.assertEqual(len(integrations), 1)
+        self.assertIsInstance(integrations[0], FakeLoggingIntegration)
+        self.assertEqual(integrations[0].kwargs, {"level": None, "event_level": None, "sentry_logs_level": None})
+
+    def test_scrub_drops_logentry_log_text(self) -> None:
+        event = {
+            "level": "error",
+            "logger": "urllib3",
+            "logentry": {"message": "GET https://lake.test/x?token=sk-live-SECRET123 failed", "params": []},
+        }
+        scrubbed = observability.scrub_event(event, {})
+        self.assertNotIn("logentry", scrubbed)
+        self.assertNotIn("sk-live-SECRET123", json.dumps(scrubbed))
+
+    def test_scrub_drops_message_not_from_our_reporters(self) -> None:
+        # The API never calls capture_message, so any message is free log text.
+        scrubbed = observability.scrub_event({"level": "error", "message": "read /private/lake/path token=abc"}, {})
+        self.assertNotIn("message", scrubbed)
+        self.assertNotIn("/private/lake", json.dumps(scrubbed))
+
+    def test_scrub_blanks_exception_value(self) -> None:
+        event = {"exception": {"values": [{"type": "KeyError", "value": "'token=abc123'"}]}}
+        value = observability.scrub_event(event, {})["exception"]["values"][0]
+        self.assertEqual(value["type"], "KeyError")
+        self.assertEqual(value["value"], "")
 
     def test_healthy_request_sends_nothing(self) -> None:
         sentry, base = self.start("https://key@example.invalid/1")
