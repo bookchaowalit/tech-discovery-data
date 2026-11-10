@@ -1,0 +1,2 @@
+# Fake "sk-live-..." token in a Sentry scrub regression test (replaced by a low-entropy fake in the next commit). Reviewed 2026-11-10.
+75927daebb2cb286c957a463168ecb48e2bd4bb0:tests/test_api_sentry.py:generic-api-key:152

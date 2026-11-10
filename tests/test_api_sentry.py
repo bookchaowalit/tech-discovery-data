@@ -149,11 +149,11 @@ class ApiSentryTests(unittest.TestCase):
         event = {
             "level": "error",
             "logger": "urllib3",
-            "logentry": {"message": "GET https://lake.test/x?token=sk-live-SECRET123 failed", "params": []},
+            "logentry": {"message": "GET https://lake.test/x?token=leaky-token failed", "params": []},
         }
         scrubbed = observability.scrub_event(event, {})
         self.assertNotIn("logentry", scrubbed)
-        self.assertNotIn("sk-live-SECRET123", json.dumps(scrubbed))
+        self.assertNotIn("leaky-token", json.dumps(scrubbed))
 
     def test_scrub_drops_message_not_from_our_reporters(self) -> None:
         # The API never calls capture_message, so any message is free log text.
