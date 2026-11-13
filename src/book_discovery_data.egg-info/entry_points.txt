@@ -1,0 +1,2 @@
+[console_scripts]
+book-discovery-data = discovery_data.api:main

@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: book-discovery-data
+Version: 0.1.0
+Summary: Lake-first technology discovery data contract for Solo Empire.
+Requires-Python: >=3.11
+License-File: LICENSE
+Provides-Extra: lake
+Requires-Dist: solo-empire-data-lake[lake] @ https://github.com/bookchaowalit/data-lake-core/archive/b8f8698995a4d4283247bd432d521b337ef8ec94.tar.gz ; extra == "lake"
+Provides-Extra: dev
+Requires-Dist: pytest>=7; extra == "dev"
+Requires-Dist: ruff>=0.5; extra == "dev"
+Dynamic: license-file

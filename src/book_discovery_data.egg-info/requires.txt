@@ -1,0 +1,7 @@
+
+[dev]
+pytest>=7
+ruff>=0.5
+
+[lake]
+solo-empire-data-lake[lake] @ https://github.com/bookchaowalit/data-lake-core/archive/b8f8698995a4d4283247bd432d521b337ef8ec94.tar.gz
